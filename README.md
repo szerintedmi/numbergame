@@ -1,7 +1,7 @@
 # numbergame
 Decentralised Smallest Number Game on Ethereum
 
-Play a game where each player sends one positive integer in a game round, with a fixed 'bet' amount. The player who sends a unique and smallest number wins the pot. This means if two people happen to send the same number, then the third one gets all the bets regardless.
+Play a game where each player sends one positive integer in a game round, with a fixed 'bet' amount. The player who sends a unique and smallest number wins the pot. This means if two people happen to send the same number, then the third one gets all the bets regardless the other two number were smaller.
 If there is no winner (ie. there is no unique number in the round ) then all players get back their bet.  
 What number would you put if you were to play this game?
 
@@ -24,29 +24,14 @@ Participants send their bet to a 3rd party ([oraclize.it](http://www.oraclize.it
 See also: [Detailed Sequence Diagram](docs/numberGame_sequenceDiagram.png)
 
 ### Potential problems:
-* 3rd party is able to read the bets
-* 3rd party may be able to alter the bets
-* 3rd party may fail to deliver some (or all) clear-text bets. In this case, the round is couldn't be closed. Though there is a function with closeRound with which can be called by the contract owner
+* the 3rd party (Oraclize) is able to read the bets
+* the 3rd party (Oraclize) may be able to alter the bets
+* the 3rd party (Oraclize) may fail to deliver some (or all) clear-text bets. In this case, the round is couldn't be closed. Though there is a function with closeRound with which can be called by the contract owner
 * It may cost too much gas to close a large round. Should make it iterative.
 * We can only end the rounds in a given future time. Having a target Player number might be better for multiple reasons (incentify players to invite other players and no strategic advantage to bet last minute because number of players is fixed )  
 Potential solution could be a custom  service which can reveal bet at any time by the request of the contract.
 
-## Alternative Seal/Reveal approach
-Implement a seal/reveal mechanism similar to the ENS domain registrar. See:
-https://github.com/ethereum/EIPs/issues/162
-https://github.com/ethereum/ens/blob/master/contracts/HashRegistrarSimplified.sol
-
-Participants submit a sealed bet (a hash of round, owner, bet, random salt), and are expected to reveal their own bets in a grace period after the closing date. This way, no 3rd party needs to be involved.
-
-### Problems:
-* Participant may choose to withhold their bets after some others reveal theirs
-* Bad UX - too much hassle for a  game
-  * players must save their private keys for each bet
-  * user must return to reveal the bid  
-* Single point of failure
-* Challenging to do shorter game turns
-
-
+See potential [alternative approaches](docs/alternativeApproaches.md)
 
 ## Dev environment
 ### Prerequisites
