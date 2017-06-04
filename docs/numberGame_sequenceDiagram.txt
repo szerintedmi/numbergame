@@ -1,0 +1,60 @@
+@startuml
+title **NumberGame** Placing a bid - detailed sequence diagram
+skinparam arrowColor #blue
+skinparam noteBackgroundColor #lightgrey
+actor Player
+boundary WebClient
+control Contract
+database EtherChain
+boundary Oraclize
+	Player -> WebClient : launch page
+	WebClient -> Contract : latestRoundId()
+	WebClient <-- Contract : return latestRoundId
+	WebClient -> Contract : getRoundInfo(latestRoundId)
+	WebClient <-- Contract : return current round info & next round params
+	alt if no bet yet
+		Player -> WebClient : user request to start a new round
+		WebClient [#red]-> Contract : startNewRound()
+		Contract [#red]-> EtherChain : add new Round to rounds[]
+		WebClient <-- Contract: return newRoundId
+	end
+	WebClient -> Contract: verifyBet(roundId, requiredBetAmount)
+	note right
+		verifyBet is needed for friendly error handling
+		because we can't return error code from placeBet
+	end note
+	WebClient <-- Contract : return verifyBet result
+	WebClient <--> WebClient : encrypt guessed number with Oraclize's public key
+	WebClient [#red]-> Contract : placeBet(roundId, encryptedBet,requiredBetAmount)
+	note over Oraclize
+		Communication with Oraclize is through the chain
+		but we didn't indicate it for simplicity
+	end note
+	Contract [#red]-> Oraclize : oraclize_query( revealTime, "decrypt", encryptedBet)
+	note left: request a scheduled callback to decrypt guess
+	note over Oraclize
+		Oraclize deducts fee + callback gas cost
+		from Contract balance in advance at this point
+	end note
+	Contract <-- Oraclize : return queryId
+	Contract [#red]-> EtherChain : store player & queryId in im_bets
+	Player <- Contract : confirm bet
+	== Other Players can guess until round isActive ==
+	... when reveal time hits ...
+	Oraclize [#red]-> Contract : __callback(queryId, decrypted bet) with first reveal
+	Contract [#red]-> EtherChain : updated im_bets with revealed bet, update rounds[], set to inactive
+	Contract --> Contract : checkAndCloseRound() checks if it's the last reveal
+== One reveal callback for each guess ==
+	alt last bet revealed (or checkAndCloseRound called by admin with forceClose flag)
+		Contract [#red]-> EtherChain : checkAndCloseRound() sets isActive to false
+		Contract [#red]-> EtherChain : updateResults() (called from checkAndCloseRound())
+		Contract [#red]-> EtherChain : payFee() - fee to owner
+		alt if there is a winner
+			Contract [#red]-> EtherChain : payWinner()
+		else if there is no winner
+			Contract [#red]-> EtherChain : refundPlayers()
+		end
+		Contract -> WebClient : e_roundClosed event
+		WebClient -> Player : UI updated with results
+	end
+@enduml

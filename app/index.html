@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NumberGame</title>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+  <script src="./app.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-12">
+        <h1>NumberGame</h1>
+      </div>
+    </div> <!-- row -->
+
+    <div class="row">
+      <div class="col-lg-6">
+        <h4>Play game</h4>
+
+        <p><span id="roundStatus">Getting game status...</span></p>
+        <div style="display:none" id="startNewRoundDiv">
+          <button class="btn btn-primary" type="button" onclick="App.startNewRound( )">Start a round</button>
+          <div style="display:inline" id="nextRoundInfoDiv">
+            <p>
+              Next round will last <strong><span id="nextRoundLength">?</span></strong> with
+                <strong><span id="nextRoundRequiredBetAmount">?</span> ether</strong> per guess and
+                <strong><span id="nextRoundFeePt">?</span>%</strong> fee.
+            </p>
+          </div>
+        </div> <!-- startNewRoundDiv -->
+
+        <div style="display:none" id="placeBetFormDiv">
+          <form class="form-inline" onsubmit="App.placeBet(); return false; ">
+            <div class="form-group">
+              <label for="numberGuessInput">Your guess</label>
+              <input type="string" class="form-control" id="numberGuessInput" placeholder="enter a number"></input>
+            </div>
+            <button type="submit" class="btn btn-primary">Place my guess</button>
+          </form>
+        </div>  <!-- placeBetFormDiv -->
+
+        <div style="display:none" id="myBetDiv">
+          <hr />
+          <p>Your guess in latest round: <span id="yourBet"></span><br/>
+          <span id="yourBetStatus"></span></p>
+        </div>
+
+        <div style="display:none" id="roundInfoDiv">
+          <hr />
+          <p><span id="gameInfo"></span></p>
+          <p>
+            Game round id: <span id="latestRoundId">?</span> |
+            <span id="roundActive">Unknown round status</span> |
+            Guess count: <span id="betCount">?</span> (revealed:  <span id="revealedBetCount">?</span>) <br/>
+            Round close: <span id="revealTimeCountDown"></span>  <span id="revealTime">?</span> <br/>
+            Price per guess: <span id="betAmount">?</span> Ether <br/>
+            Total winnable pot: <span id="winnablePot">?</span> ether<br/>
+            Fee: <span id="feePt"></span>%
+          </p>
+        </div>
+
+        <h4>Admin functions</h4>
+        <div style="display:show" id="adminTxDiv">
+          <p><span id="areYouAdmin"></span></p>
+          <button class="btn btn-sm" type="button" onclick="App.closeRound( false)">closeRound</button>
+          <button class="btn btn-warning btn-sm" type="button" onclick="App.closeRound( true )">force Close round</button>
+
+          <button class="btn btn-sm" type="button" onclick="App.startNewRound( )">New round</button>
+
+          <form class="form-inline" onsubmit="App.setNextRoundLength(); return false; ">
+            <div class="form-group">
+              <label for="nextRoundLengthInput">Next round length</label>
+              <input type="number" step="1" min="0" class="form-control" id="nextRoundLengthInput" placeholder="length (in secs)"></input>
+            </div>
+            <button class="btn btn-sm" type="submit" class="btn btn-default">Set</button>
+          </form>
+
+          <form class="form-inline" onsubmit="App.setNextRoundRequiredBetAmount(); return false; ">
+            <div class="form-group">
+              <label for="setNextRoundRequiredBetAmountInput">Next round guess amount</label>
+              <input type="number" step=".001" min="0" class="form-control" id="setNextRoundRequiredBetAmountInput" placeholder="amount (in ether)"></input>
+            </div>
+            <button class="btn btn-sm" type="submit" class="btn btn-default">Set</button>
+          </form>
+
+          <form class="form-inline" onsubmit="App.setNextRoundFee(); return false; ">
+            <div class="form-group">
+              <label for="setNextRoundFeeInput">Next round fee %</label>
+              <input type="number" step=".01" min="0" class="form-control" id="setNextRoundFeeInput" placeholder="%"></input>
+            </div>
+            <button class="btn btn-sm" type="submit" class="btn btn-default">Set</button>
+          </form>
+
+        </div>
+
+      </div>
+
+      <div class="col-lg-6">
+        <p><font color="red"><span id="status"></span></font></p>
+        <h4>Accounts</h4>
+          <form class="form-horizontal">
+            <div class="control-group">
+              <div class="controls" id="accountList">
+              </div>
+            </div>
+          </form>
+          <span id="addresses"></span>
+          <p>Selected Account: <span id="accountAddress"></span> <br/>
+             Balance: <span id="accountEther"></span>ether</p>
+
+        <h4>Status</h4>
+        <p>Contract Address: <span id="contractAddress"></span> <br/>
+          Contract Owner : <span id="contractOwner"></span> <br/>
+          Contract Balance: <span id="contractEther"></span> ether
+          <button class="btn btn-sm" type="button" onclick="App.submitEtherToContract()">Send 5 Ether to contract</button><br/></p>
+          <strong><p>Latest round status:</strong><br/>
+            <span id="debugRoundStatus">?</span>
+          </p>
+          <p>
+            Oraclize Decrypt price: <span id="decryptPrice">?</span> Ether
+          </p>
+      </div>
+    </div> <!-- row -->
+
+    <div class="row">
+      <div class="col-lg-6">
+        <!-- <h2>Check domain release date </h2> -->
+
+        <!-- <form onsubmit="App.getDomainBiddingStartDate(); return false; ">
+
+          <div class="form-group">
+            <label for="domainName">Domain Name</label>
+            <input type="text" class="form-control" id="domainName" placeholder="abcd.eth"></input>
+          </div>
+          <span id="domainBiddingStartDate"></span><br/>
+          <button class="btn" type="submit" class="btn btn-default">Submit</button>
+
+        </form> -->
+
+        <!-- <h2>Send Ether around</h2>
+        <form onsubmit="App.submitTransaction(); return false; ">
+          <div class="form-group">
+            <label for="to">To (address)</label>
+            <input type="text" class="form-control" id="to" placeholder="0x4AS3AF"></input>
+          </div>
+
+          <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" class="form-control" id="amount" placeholder="123"></input>
+          </div>
+
+          <div class="form-group">
+            <label for="reason">Reason</label>
+            <input type="text" class="form-control" id="reason" placeholder="Because it's ..."></input>
+          </div>
+
+          <button class="btn" type="submit" class="btn btn-default">Submit</button>
+
+        </form>
+
+        <form onsubmit="App.approveTransaction(); return false; ">
+
+          <div class="form-group">
+            <label for="proposalId">Proposal id</label>
+            <input type="number" class="form-control" id="proposalId" placeholder="123"></input>
+          </div>
+
+          <button class="btn" type="submit" class="btn btn-default">Submit</button>
+
+        </form> -->
+
+      </div>
+
+    </div><!-- row -->
+
+    <div class="row">
+      <div class="col-lg-12">
+        <h3>Events</h3>
+        <div id="events"></div>
+      </div>
+    </div> <!-- row -->
+
+
+    <div class="row">
+
+    </div> <!-- row -->
+
+  </div>
+</body>
+</html>

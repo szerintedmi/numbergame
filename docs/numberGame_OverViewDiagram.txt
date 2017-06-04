@@ -1,0 +1,29 @@
+@startuml
+title **NumberGame** Placing a bid - High level Overview
+skinparam arrowColor #blue
+skinparam noteBackgroundColor #lightgrey
+actor Player
+control Contract
+boundary Oraclize
+	alt if no bet yet
+		Player [#red]-> Contract : Start a new round
+		Player <-- Contract: return newRoundId
+	end
+	Player <--> Player : encrypt guessed number locally with Oraclize's public key
+	Player [#red]-> Contract : place guess with encrypted number guess
+	Contract -> Oraclize : request a scheduled callback to decrypt guess at reveal time
+	Player <- Contract : confirm guess
+	== Other Players can place guess until round is active ==
+	... when reveal time hits ...
+	Oraclize [#red]-> Contract : reveal player's guess
+	== One reveal callback for each guess ==
+	alt last bet revealed
+		Contract [#red]-> Contract : transaction fee paid to owner
+		alt if there is a winner
+			Contract [#red]-> Contract : pay winner
+		else if there is no winner
+			Contract [#red]-> Contract : refund all players (less fee)
+		end
+		Contract -> Player : UI updated with results
+	end
+@enduml
