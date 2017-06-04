@@ -1,10 +1,16 @@
 # numbergame
-Smallest Number Game on Ethereum
+Decentralised Smallest Number Game on Ethereum
 
-NOTE: This is half baked yet, there are plenty of TODO, check it below and in comments in code. Contribution, code review and suggestions are welcome!
+Play a game where each player sends one positive integer in a game round, with a fixed 'bet' amount. The player who sends a unique and smallest number wins the pot. This means if two people happen to send the same number, then the third one gets all the bets regardless.
+If there is no winner (ie. there is no unique number in the round ) then all players get back their bet.  
+What number would you put if you were to play this game?
+
+NOTE: It's a work in progress project: there are plenty of TODO and some open questions. Check it below and the comments in code.
+
+Contribution, code review and suggestions are welcome!
 
 ## Game Mechanics
-1. A round is initiated by the first player, to be closed at a pre-defined future time (closing date).
+1. A round is initiated by the first player. And be closed in a future time (closing date).
 1. Players submit their guess: a positive integer number for the round. A pre-defined guess amount is included to have a stake in the game.
 1. At the closing date, the round stops accepting further bets and a winner is selected. The winner is defined as the one who picked the lowest number that nobody else has picked.
 1. At game close the organizer takes a pre-defined fee.
@@ -12,7 +18,7 @@ NOTE: This is half baked yet, there are plenty of TODO, check it below and in co
    * If there’s no winner, the remaining funds are disbursed to the participants.
 
 ## First pass approach
-Participants send their bet to a 3rd party ([oraclize.it](http://www.oraclize.it/)) which encrypts it with it’s own secret key. The encrypted version of the bet is sent in to the contract. At a giving time  - which is specified at the beginning of the round - the 3rd party starts revealing the clear-text bets, one by one. After all bets are revealed, the round is closed.
+Participants send their bet to a 3rd party ([oraclize.it](http://www.oraclize.it/)) which encrypts it with it’s own secret key. The encrypted version of the bet is sent in to the contract. At a given time  - which is specified at the beginning of the round - the 3rd party starts revealing the clear-text bets, one by one. After all bets are revealed, the round is closed.
 
 ![OverView diagram](docs/numberGame_OverViewDiagram.png)
 See also: [Detailed Sequence Diagram](docs/numberGame_sequenceDiagram.png)
@@ -38,7 +44,7 @@ Participants submit a sealed bet (a hash of round, owner, bet, random salt), and
   * players must save their private keys for each bet
   * user must return to reveal the bid  
 * Single point of failure
-* Challenging to do quick paced rounds
+* Challenging to do shorter game turns
 
 
 
