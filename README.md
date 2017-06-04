@@ -23,7 +23,7 @@ Participants send their bet to a 3rd party ([oraclize.it](http://www.oraclize.it
 ![OverView diagram](docs/numberGame_OverViewDiagram.png)
 See also: [Detailed Sequence Diagram](docs/numberGame_sequenceDiagram.png)
 
-There a number of known issues with this approach. See ongoing discussion about potential [alternative solutions in wiki](https://github.com/szerintedmi/numbergame/wiki/Alternative-approaches)
+There are a number of known issues with this approach. See ongoing discussion in wiki about potential [alternative solutions](https://github.com/szerintedmi/numbergame/wiki/Alternative-approaches) to keep bids secret until end of the round.
 
 ## Dev environment
 ### Prerequisites
