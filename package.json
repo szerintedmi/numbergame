@@ -10,7 +10,7 @@
     "dev": "NODE_ENV=development webpack-dev-server --progress --colors --content-base build/  --watch --hot --inline --config  webpack.config.js",
     "truffle:migrate": "truffle migrate",
     "truffle:start": "node truffle",
-    "bridge:start": "node ./node_modules/ethereum-bridge/bridge.js -H localhost:8545 -a 9 --dev"
+    "bridge:start": "cd ethereum-bridge && node bridge.js -H localhost:8545 -a 9 --dev"
   },
   "engines": {
     "node": ">=6.9.1 <6.9.1"
@@ -34,7 +34,6 @@
     "eslint-plugin-mocha": "^4.8.0",
     "eslint-plugin-promise": "^3.0.0",
     "eslint-plugin-standard": "^2.0.0",
-    "ethereum-bridge": "github:oraclize/ethereum-bridge",
     "file-loader": "^0.11.1",
     "html-webpack-plugin": "^2.28.0",
     "json-loader": "^0.5.4",
