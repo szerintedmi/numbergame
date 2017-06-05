@@ -1,11 +1,12 @@
 /*
  CHECK:  timezone for revealTimeString
- TODO: reveal time on UI when current round expired (user starts new round?)
- TODO: show to user if no winner in round
+ TODO:  web3 obj is going to be deprecated. Refactor to ethjs
+        and use Promises every where (see: https://ethereum.stackexchange.com/a/16052/7866)
  TODO: test with metamask, mist etc. Handle errors if no web3, on wrong network etc.
  TODO: refactor into separate admin/common js ( use REACT?)
  TODO: add countdown for revealtime
  TODO: fix gameInfoUpdate multiple calls when events loaded at first call (especiall when from block 0)
+ CHECK: is bet encryption secure enough? Eg. secureRandom fucntion? 10 bytes random length?
  CHECK:  do we always need numberGame.deployed() ?
  CHECK: revise error handling (where to catch,
         where else could we move form function (error,res) to .then  + .catch etc.)
@@ -15,6 +16,8 @@
 import "../stylesheets/app.css";
 
 import "bootstrap/dist/css/bootstrap.css";
+var base64_arraybuffer = require('base64-arraybuffer/lib/base64-arraybuffer.js');
+import { default as secureRandom} from "secure-random/lib/secure-random.js";
 
 // Import libraries we need.
 import { default as Web3} from 'web3';
@@ -161,7 +164,7 @@ window.App = {
     console.debug("gameInfoUpdate initiated");
 
     numberGame.deployed().then(function(instance) {
-      //console.debug("gameInfoUpdate numberGame.deployed");
+      // console.debug("gameInfoUpdate numberGame.deployed");
       document.getElementById("contractAddress").innerHTML = instance.address;
       web3.eth.getBalance(instance.address, function(error, result) {
         if (error) {
@@ -316,8 +319,7 @@ window.App = {
     }); //numberGame.deployed
   }, // App.gameInfoUpdate()
 
-  // nicer way with promises but doesn't work web3 yet
-  // TODO: this need to be changed to ethjs (?) in order work with Metamask
+  // TODO: nicer way with promises but doesn't work web3 yet (need ethjs)
   // https://ethereum.stackexchange.com/questions/16051/can-i-use-metamask-with-promise-async-calls-instead-of-nested-callbacks/16052#16052
   //
   // basicInfoUpdate: function() {
@@ -431,7 +433,6 @@ window.App = {
 
         var submittedGuess = parseInt(document.getElementById("numberGuessInput").value);
         // TODO: client side validation (is number, >0, max value etc.)
-
         instance.verifyBet(currentRound.roundId, currentRound.requiredBetAmount)
         .then( function (result) {
 
@@ -456,7 +457,7 @@ window.App = {
             if (xhr.readyState === 4) {
               //console.debug("Response from Oraclize encrypt:", xhr.response); //Outputs a DOMString by default
 
-              var encryptedBet = JSON.parse(xhr.response).result;
+              var encryptedBet = JSON.parse(xhr.response).result ;
 
               console.debug(" placeBet -  sending tx. roundId: " + currentRound.roundId + " | Value: "
                   + currentRound.requiredBetAmount + " from account " + accountSelected + " to "
@@ -475,9 +476,10 @@ window.App = {
            }
        } // xhr.onreadystatechange
        xhr.send(JSON.stringify({
-           message: submittedGuess + ":fdfsdsds" // TODO: MUST! add proper nonce/salt/random string
+           message: submittedGuess + ":"
+            + base64_arraybuffer.encode( secureRandom(10, {type: 'Buffer'}))
          })
-       );
+       ); // xhr.send()
     }); // verifyBet
    }); // deployed
   }, // placeBet

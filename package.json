@@ -47,8 +47,10 @@
     "webpack-dev-server": "^2.3.0"
   },
   "dependencies": {
+    "base64-arraybuffer": "^0.1.5",
     "bootstrap": "^3.3.7",
     "moment": "^2.18.1",
-    "moment-countdown": "0.0.3"
+    "moment-countdown": "0.0.3",
+    "secure-random": "^1.1.1"
   }
 }
