@@ -29,40 +29,35 @@ There are a number of known issues with this approach. See ongoing discussion in
 ### Prerequisites
 * [Ethereum CLI](https://www.ethereum.org/cli)
 * [nodejs](https://nodejs.org/en/download/)
-* [node version manager](https://github.com/tj/n) `npm install -g n`
-  * install 6.9.1 for ethereum-bridge: `n 6.9.1`
-  * install latest (tested with 8.0.0): `n latest`
-* [testRPC](https://github.com/ethereumjs/testrpc): `npm install -g ethereumjs-testrpc`
-* [Truffle](https://truffle.readthedocs.io/en/latest/getting_started/installation/): `npm install -g truffle`
-* [Ethereum bridge](https://github.com/oraclize/ethereum-bridge)
 * [Ethereum explorer](https://github.com/szerintedmi/explorer) if you want to browse local chain from UI
-
+* numbergame repo  
 ```
-git clone https://github.com/szerintedmi/numbergame.git
+git clone --recursive https://github.com/szerintedmi/numbergame.git
 cd numbergame
-npm install --save bootstrap
-npm install --save moment
-npm install --save moment-countdown
+npm install
 ```
+#### Optional
+* if you want to run testrpc in a [docker](https://store.docker.com/search?type=edition&offering=community) container:  
+`npm run testrpc:docker:build`
+* if you want to work with newer nodejs versions:
+  * [node version manager](https://github.com/tj/n): `npm install -g n`
+  * install 6.9.1 for ethereum-bridge: `n 6.9.1`
+  * install latest (tested with 8.0.0):  `n latest`
 
-### Compile & deploy
-#### on testRPC
-1. `testrpc -m "hello build tongue rack parade express shine salute glare rate spice stock" -a 10`  
-_This exact mnemonic is required in order to ethereum bridge deploy the contract to the same address which is currently hardcoded in NumberGame.sol_  
 
-1. `n use 6.9.1 bridge -H localhost:8545 -a 9 --dev`
-1. `truffle migrate`
-1. `npm run dev`
+### Compile & deploy & run
+#### on testprc
+```
+testrpc -m "hello build tongue rack parade express shine salute glare rate spice stock" -a 10
+npm run bridge:start
+npm start truffle:migrate
+npm run dev
+```
+[Detailed deploy instrucitons](docs/deploy.md)
 
-TODO: When contract .sol changed then both testrcp and ethereum-bridge need to be restarted. truffle migrate won't deploy the new version.
-
-TODO: dockerize
-
-#### Local chain
-TODO: not tested yet
-
-#### Test network
-TODO: not tested yet
+TODO:
+ * When contract .sol changed then both testrcp and ethereum-bridge need to be restarted. Truffle migrate won't deploy the new version.
+ * dockerize (Dockerfiles + docker-compose config)
 
 ## Testing
 TODO: write unit tests
