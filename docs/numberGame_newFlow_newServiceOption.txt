@@ -1,0 +1,50 @@
+@startuml
+title **NumberGame** New flow to tackle gas limit - option with a new service
+skinparam arrowColor #blue
+skinparam noteBackgroundColor #lightgrey
+actor Player
+control Contract
+boundary NewService
+	alt if no bet yet
+		Player [#red]-> Contract : Start a new round
+		Contract -> NewService : New keypair for round
+		NewService -> Contract : Public key for round
+	end
+	Player -> Contract : request round public key
+	Player <-- Contract : return public key & newRoundId
+	Player [#red]-> Contract : bet with encrypted bid
+	== Other Players can place guess until bidcount reached or first bet revealed ==
+	... when reveal time hits ...
+	Contract -> NewService : request reveal
+	note left
+		the service only accepts reveal request from the contract
+		address which requested the keypair.
+	end note
+	NewService [#red]-> Contract : reveal public key
+	alt Option1: NewService does the calculation to save gas
+	  NewService <-> NewService : calculate winner
+		NewService [#red]-> Contract : send winner
+		note left
+			Even if winner calculated by external party it can be verified
+			because the bids' public key has been revealed
+		end note
+		Contract <-> NewService : update winner
+		note left
+			this is only one callback with winner address
+			and winning number
+		end note
+		Contract [#red]-> Contract : deduct transaction fee
+		alt if there is a winner
+			Contract [#red]-> Contract : pay winner
+		else if there is no winner
+			Contract [#red]-> Contract : refund all players (less fee)
+		end
+	else Option 2: contract does all the stuff
+		Contract -> Contract : decrypt etc.
+		note left
+			Same logic as in new oraclize flow (ie. batch update results
+			 then separate callback for refund or payWinner
+		end note
+	end
+	Contract -> Player : UI updated with results
+@enduml

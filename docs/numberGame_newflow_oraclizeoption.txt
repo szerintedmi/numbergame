@@ -1,0 +1,35 @@
+@startuml
+title **NumberGame** New flow to tackle gas limit - option with Oraclize
+skinparam arrowColor #blue
+skinparam noteBackgroundColor #lightgrey
+actor Player
+control Contract
+boundary Oraclize
+	Player [#red]-> Contract : bet with encrypted bid
+	Contract -> Oraclize : request a scheduled callback to decrypt bid
+	== Other Players can place guess until reveal time reached or first bet revealed ==
+	... when reveal time hits ...
+	Oraclize [#red]-> Contract : reveal player's guess
+	alt reveals count > max batch number (or it's the last reveal)
+		Contract [#red]-> Oraclize : request result update callback
+		note left
+			This is how we split update results to smaller chunck
+			to avoid hitting block gasLimit and also let the
+			gas cost to be paid by the Contract
+		end note
+		Oraclize -> Contract : update results callback
+		Contract <-> Contract : update results
+	end
+	== One reveal callback for each guess ==
+	alt last batch processed (from update result)
+		Contract -> Oraclize : request refund or paywinner  callback
+		Oraclize -> Contract : refund or paywinner  callback
+		Contract [#red]-> Contract : deduct transaction fee
+		alt if there is a winner
+			Contract [#red]-> Contract : pay winner
+		else if there is no winner
+			Contract [#red]-> Contract : refund all players (less fee)
+		end
+		Contract -> Player : UI updated with results
+	end
+@enduml
