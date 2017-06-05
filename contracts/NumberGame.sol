@@ -301,7 +301,7 @@ contract NumberGame is owned, usingOraclize  {
         // CHECK: error handling from oraclize_query?
         // CHECK: how gas price setting works here?
         // CHECK: is the 200k default gas safe enough? https://github.com/oraclize/ethereum-api/issues/10
-        queryId = oraclize_query( game.rounds[game.latestRoundId].revealTime, "decrypt", encryptedBet, 3141592);
+        queryId = oraclize_query( game.rounds[game.latestRoundId].revealTime, "decrypt", encryptedBet, 1000000 ); // block limit: 3141592
 
         game.rounds[game.latestRoundId].im_bets.insert(msg.sender, 0); // store bet with 0 for now, we will reveal
                                     // later in scheduled _callback
