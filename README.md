@@ -29,7 +29,6 @@ There are a number of known issues with this approach. See ongoing discussion in
 ### Prerequisites
 * [Ethereum CLI](https://www.ethereum.org/cli)
 * [nodejs](https://nodejs.org/en/download/)
-* [Ethereum explorer](https://github.com/szerintedmi/explorer) if you want to browse local chain from UI
 * numbergame repo  
 ```
 git clone --recursive https://github.com/szerintedmi/numbergame.git
@@ -53,7 +52,10 @@ npm run bridge:start
 npm start truffle:migrate
 npm run dev
 ```
-[Detailed deploy instrucitons](docs/deploy.md)
+[Detailed deploy instructions](docs/deploy.md)
+
+* An improved and customized [Ethereum explorer fork](https://github.com/szerintedmi/explorer) if you want to browse the local chain:  
+```npm run explorer:start```
 
 TODO:
  * When contract .sol changed then both testrcp and ethereum-bridge need to be restarted. Truffle migrate won't deploy the new version.

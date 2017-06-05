@@ -1,3 +1,6 @@
 [submodule "ethereum-bridge"]
 	path = ethereum-bridge
 	url = https://github.com/oraclize/ethereum-bridge
+[submodule "explorer"]
+	path = explorer
+	url = https://github.com/szerintedmi/explorer.git
