@@ -6,7 +6,7 @@
     "lint": "eslint ./",
     "build": "webpack -p",
     "testrpc:docker:build": "docker build -t decent/testrpc docker/testrpc",
-    "testrpc:start": "docker run -t decent/testrpc testrpc -m \"hello build tongue rack parade express shine salute glare rate spice stock\" -a 10",
+    "testrpc:start": "docker run -p 8545:8545 -t decent/testrpc testrpc -m \"hello build tongue rack parade express shine salute glare rate spice stock\" -a 10",
     "dev": "NODE_ENV=development webpack-dev-server --progress --colors --content-base build/  --watch --hot --inline --config  webpack.config.js",
     "truffle:migrate": "truffle migrate",
     "truffle:start": "node truffle",
