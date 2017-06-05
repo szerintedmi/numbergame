@@ -32,6 +32,8 @@ contract NumberGame is owned, usingOraclize  {
     using nGameLib for nGameLib.ResultCalcHelper;
 
     /* TODO: contract is too big, need to refactor to separate contracts (and rethink libs includng nGameLib)
+     TODO: deductFee() transfers the whole fee amount to owner although oraclize already deducted
+            transaction fees. How to handle this in an automated way to make sure the contract has always money
      TODO: what gasPrice to use for the callback(s)?
      TODO: add admin fucntion to adjust gasLimit for callback functions
      TODO: NICE add admin users feature - certain functions can be managed only by them (addAdmin, removeAdmin. setBetAmount, revealTime, freeze etc.)
@@ -55,7 +57,6 @@ contract NumberGame is owned, usingOraclize  {
               the main issue is that the round close is happening in the last reveal callback so we need to always pass
                 gas to ORaclize to cover it and they don't refund
               any better way to do it? maybe split the transaction into multiple oraclize callbacks.
-      CHECK: make sure client side properly adds randomness to the bid enrcyption
       CHECK: client side must check bet before encryption for correct bet.
       CHECK: do we need  version control if we have admin kill switch?
             Ie we can just change contract address on client side (or use ENS?) for new versions
@@ -133,7 +134,6 @@ contract NumberGame is owned, usingOraclize  {
 
     function getFeeAmount(uint _roundId) constant returns (uint _feeAmount) {
       // returns fee based on current state
-      // TODO: add fee calculation
       _feeAmount = getTotalPot(_roundId) * game.rounds[_roundId].fee / 1000000;
       return _feeAmount;
     }
@@ -275,20 +275,17 @@ contract NumberGame is owned, usingOraclize  {
       * roundId: get it by instance.latestRoundId()
       *          it must be provided to ensure the the currentRound didn't change since client retrieved it
       * encryptedBet: bet encrypted on client side with Oraclize public key.
-      *               format : "<guessed integer>:<randomsttring>"
+      *               format : "<guessed integer>:<random>"
       *               the guess must bigger than zero
       *               You can use this public API to encrypt the string:
       *               https://api.oraclize.it/v1/utils/encryption/encrypt
-      *                 the data in the GET shoud be {"message": "8:<generate real random string>"}
+      *                 the data in the GET shoud be {"message": "8:<random>"}
       *
       * RETURNS:
       *   on success : callback query id received from Oraclize on success
       *   on error: throws without error :/.
       *             Throw needed to reject ether recevied and can't return error code with throw.
-      *             Use verifyBet before calling for error codes.
-      *
-      *   CHECK: Is this encryption method safe? how long random string should we recommend for client side encryption?
-      *   CHECK:  error handling, return an error code (hwo to send back ether included in tx  without throw?)
+      *             Use verifyBet() before calling for error codes.
       *
       ********************************************************** */
 
@@ -500,10 +497,10 @@ contract NumberGame is owned, usingOraclize  {
     } // checkAndCloseRound
 
     function deductFee() internal {
-      // throws on error
-      // CHECK: this works only with solidity 0.8.10+ but truffle doesn't support that version
-      //        follow this question: https://ethereum.stackexchange.com/questions/15749/how-do-i-specify-a-different-solidity-version-in-a-truffle-contract
-      // owner.transfer(getFeeAmount(game.latestRoundId)); // this throws on error
+      /* throws on error
+        CHECK: this works only with solidity 0.8.10+ but truffle doesn't support that version
+              follow this question: https://ethereum.stackexchange.com/questions/15749/how-do-i-specify-a-different-solidity-version-in-a-truffle-contract
+              owner.transfer(getFeeAmount(game.latestRoundId)); // this throws on error */
       if (!owner.send(getFeeAmount(game.latestRoundId)) ) {
         throw;
       }
