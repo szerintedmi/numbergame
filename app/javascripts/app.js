@@ -58,12 +58,12 @@ function Game ( _roundsCount, _latestRoundId,  _nextRoundLength,
 
 function Round (_roundId, _isActive,
  _requiredBetAmount,  _revealTime,  _roundLength,
- _betCount,  _revealedBetCount,   _unReveleadBetCount,
+ _betCount,  _revealedBetCount,   _unReveleadBetCount, _invalidBetCount,
  _winningAddress,  _smallestNumber, _winnablePot, _fee ) {
   /* to store round info from contract's getRoundInfo call :
   bool _isActive,
   uint _requiredBetAmount, uint _revealTime, uint _roundLength,
-  uint _betCount, uint _revealedBetCount,  uint _unReveleadBetCount,
+  uint _betCount, uint _revealedBetCount,  uint _unReveleadBetCount, uint _invalidBetCount,
   address _winningAddress, uint _smallestNumber,
   uint _winnablePot, uint _fee */
 
@@ -75,6 +75,7 @@ function Round (_roundId, _isActive,
   this.betCount = _betCount;
   this.revealedBetCount = _revealedBetCount;
   this.unReveleadBetCount = _unReveleadBetCount;
+  this.invalidBetCount = _invalidBetCount;
   this.winningAddress = _winningAddress;
   this.smallestNumber = _smallestNumber;
   this.winnablePot = _winnablePot;
@@ -182,9 +183,9 @@ window.App = {
         }
         document.getElementById("contractOwner").innerHTML = res;});
 
-      instance.getOraclizePrice("decrypt").then( function(res) {
+      /* instance.getOraclizePrice("decrypt").then( function(res) {
           document.getElementById("decryptPrice").innerHTML = web3.fromWei(res.toNumber(), "ether");
-      }).catch( function (err) {console.error("getDecryptPrice error", err)});
+      }).catch( function (err) {console.error("getDecryptPrice error", err)}); */
 
       instance.getGameInfo().then( function(res) {
         // console.debug("instance.getGameInfo called",res);
@@ -227,10 +228,11 @@ window.App = {
           currentRound.betCount = res[4].toNumber();
           currentRound.revealedBetCount = res[5].toNumber();
           currentRound.unReveleadBetCount = res[6].toNumber();
-          currentRound.winningAddress = res[7];
-          currentRound.smallestNumber = res[8].toNumber();
-          currentRound.winnablePot = res[9].toNumber();
-          currentRound.fee = res[10].toNumber();
+          currentRound.invalidBetCount = res[7].toNumber();
+          currentRound.winningAddress = res[8];
+          currentRound.smallestNumber = res[9].toNumber();
+          currentRound.winnablePot = res[10].toNumber();
+          currentRound.fee = res[11].toNumber();
 
           currentRound.revealTimeString = moment.unix(currentRound.revealTime).format("DD/MMM/YYYY HH:mm:ss")
 

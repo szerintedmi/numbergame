@@ -1,6 +1,8 @@
 pragma solidity ^0.4.8;
 
 import "./itMapsLib.sol";
+import "./solidity-stringutils/strings.sol"; // github.com/Arachnid/solidity-stringutils/strings.sol
+import "./stringUtilsLib.sol";
 
 library nGameLib {
 
@@ -9,23 +11,16 @@ library nGameLib {
   using itMapsLib for itMapsLib.itMapAddressUint;
   using itMapsLib for itMapsLib.itMapUintAddress;
   using itMapsLib for itMapsLib.itMapUintBool;
+  using strings for *;
+  using stringUtilsLib for stringUtilsLib;
 
   struct Game {
       Round[] rounds;
-      ResultCalcHelper resultCalcHelper;
-      uint latestRoundId; // idx in rounds, starting with 0
-      uint nextRoundLength; // in seconds minutes;
+      uint latestRoundId; /* idx in rounds, starting with 0 TODO: replace with rounds.length? */
+      uint nextRoundLength; // round duration in seconds ;
       uint nextRoundRequiredBetAmount; // in Wei
       uint nextRoundFee; // parts per million , ie. 10,000 = 1%
-  }
-
-  struct ResultCalcHelper {
-    /* temporary structure to calculate results - can't be in memory because can't create mappings and dynamic arrays in memory
-    TODO: CHECK: could it be done without storage ??  */
-    itMapsLib.itMapUintAddress im_seenOnce; // Key:betnumber -> Value:PlayerAddress
-    itMapsLib.itMapUintBool im_seenMultiple; // Key:betnumber => Value:seen (bool)
-                                          // mapping(uint=>bool) m_seenMultiple; would be enough to calc results
-                                          // but it needs to be itmap to be able to clear after round.
+      ResultCalcHelper resultCalcHelper;
   }
 
   struct Round {
@@ -35,6 +30,7 @@ library nGameLib {
       mapping(bytes32=>address) m_queries;
       uint requiredBetAmount;
       uint revealedBetCount;
+      uint invalidBetCount;
       uint smallestNumber;
       uint revealTime;
       uint roundLength;
@@ -42,6 +38,15 @@ library nGameLib {
       address winningAddress;
       bool isActive;
   }
+
+  struct ResultCalcHelper {
+  /* temporary structure to calculate results - can't be in memory because can't create mappings and dynamic arrays in memory
+  TODO: CHECK: could it be done without storage ??  */
+  itMapsLib.itMapUintAddress im_seenOnce; // Key:betnumber -> Value:PlayerAddress
+  itMapsLib.itMapUintBool im_seenMultiple; // Key:betnumber => Value:seen (bool)
+                                        // mapping(uint=>bool) m_seenMultiple; would be enough to calc results
+                                        // but it needs to be itmap to be able to clear after round.
+}
 
   function _startNewRound(Game storage self) returns (uint newRoundId) {
     // CHECK: error handling (do we need to return an error code if it fails?)
@@ -56,14 +61,15 @@ library nGameLib {
     itMapsLib.itMapAddressUint memory im; // CHECK: memory???
     newRoundId = self.rounds.push( nGameLib.Round( {
         im_bets: im,
-        isActive: true,
-        winningAddress: address(0),
         smallestNumber: 0,
         roundLength: self.nextRoundLength,
         revealTime: now + self.nextRoundLength,
         requiredBetAmount: self.nextRoundRequiredBetAmount,
         revealedBetCount: 0,
-        fee: self.nextRoundFee
+        invalidBetCount: 0,
+        fee: self.nextRoundFee,
+        winningAddress: address(0),
+        isActive: true
     }));
 
     self.latestRoundId = newRoundId -1;
@@ -71,48 +77,78 @@ library nGameLib {
     return self.latestRoundId;
   }
 
+  function _revealBet(Game storage self, address _playerAddress, string _betString) internal returns (uint betNumber) {
+    Round storage  currentRound = self.rounds[self.latestRoundId];
+    currentRound.revealedBetCount++; // we count as revelead (but still can be invalid)
+
+    // extract the received decrypted parameters
+    // CHECK: this cost a lot of gas, especially for longer strings. maybe limit how long we parse  somehow?
+    strings.slice memory s = _betString.toSlice();
+    strings.slice memory part;
+    // part and return value is first before :
+    string memory arg1 = s.split(":".toSlice(), part).toString();
+    // var arg2 = s.split(".".toSlice(), part); // part and return value is next after :
+    // stringToUint returns 0 if can't convert which is fine as it will be treated as invalid bet
+    // CHECK: stringToUint returns 123 for "as1fsd2dsfsdf3asd" Can it cause any issue?
+
+    betNumber = stringUtilsLib.stringToUint(arg1);
+    //betNumber = stringUtilsLib.parseInt(arg1, 0); // alterneative way to convert
+
+   if (betNumber > 0) {
+      // reveal bid in im_bets if it's a valid betNumber
+      currentRound.im_bets.insert(_playerAddress, betNumber);
+
+    } else {
+      // it's an invalid betNumber
+      currentRound.invalidBetCount++;
+    }
+
+    return betNumber;
+
+  }
+
   function updateResults(Game storage self, uint _roundId) returns (uint numberOfUnrevealedOrInvalidBets) {
-      Round storage _round = self.rounds[_roundId];
-      ResultCalcHelper storage _resultCalcHelper = self.resultCalcHelper;
-      uint numberOfBets = _round.im_bets.size() ;
-      uint numberToCheck;
+    Round storage _round = self.rounds[_roundId];
+    ResultCalcHelper storage _resultCalcHelper = self.resultCalcHelper;
+    uint numberOfBets = _round.im_bets.size() ;
+    uint numberToCheck;
 
-      // collect unique betnumbers in seenOnce from all bets (im_bets)
-      for(uint i = 0; i < numberOfBets  ; i++) {
-          numberToCheck = _round.im_bets.getValueByIndex(i); // CHECK: does it overwrite value in im_bets?
-          if(numberToCheck > 0) { // if this bid has been already revealed and valid...
-            if (_resultCalcHelper.im_seenMultiple.contains(numberToCheck) ) {
-              continue;
-            }
-            if (_resultCalcHelper.im_seenOnce.contains(numberToCheck)) {
-              _resultCalcHelper.im_seenOnce.remove(numberToCheck);
-              _resultCalcHelper.im_seenMultiple.insert(numberToCheck, true);
-            } else {
-              // first occurence, add to seenOnce
-              _resultCalcHelper.im_seenOnce.insert( numberToCheck, _round.im_bets.getKeyByIndex(i));
-            }
+    // collect unique betnumbers in seenOnce from all bets (im_bets)
+    for(uint i = 0; i < numberOfBets  ; i++) {
+        numberToCheck = _round.im_bets.getValueByIndex(i); // CHECK: does it overwrite value in im_bets?
+        if(numberToCheck > 0) { // if this bid has been already revealed and valid...
+          if (_resultCalcHelper.im_seenMultiple.contains(numberToCheck) ) {
+            continue;
+          }
+          if (_resultCalcHelper.im_seenOnce.contains(numberToCheck)) {
+            _resultCalcHelper.im_seenOnce.remove(numberToCheck);
+            _resultCalcHelper.im_seenMultiple.insert(numberToCheck, true);
           } else {
-              numberOfUnrevealedOrInvalidBets++ ;
-          } // numberToCheck
-      } // for
+            // first occurence, add to seenOnce
+            _resultCalcHelper.im_seenOnce.insert( numberToCheck, _round.im_bets.getKeyByIndex(i));
+          }
+        } else {
+            numberOfUnrevealedOrInvalidBets++ ;
+        } // numberToCheck
+    } // for
 
-      // find smallestNumber in seenOnce
-      _round.winningAddress = address(0);
-      _round.smallestNumber = 0;
-      uint seenOnceCount = _resultCalcHelper.im_seenOnce.size();
-      for( i=0; i < seenOnceCount; i++) {
-        numberToCheck = _resultCalcHelper.im_seenOnce.getKeyByIndex(i);
-        if (numberToCheck < _round.smallestNumber || _round.smallestNumber == 0) {
-          _round.smallestNumber = numberToCheck;
-          _round.winningAddress = _resultCalcHelper.im_seenOnce.getValueByIndex(i);
-        }
+    // find smallestNumber in seenOnce
+    _round.winningAddress = address(0);
+    _round.smallestNumber = 0;
+    uint seenOnceCount = _resultCalcHelper.im_seenOnce.size();
+    for( i=0; i < seenOnceCount; i++) {
+      numberToCheck = _resultCalcHelper.im_seenOnce.getKeyByIndex(i);
+      if (numberToCheck < _round.smallestNumber || _round.smallestNumber == 0) {
+        _round.smallestNumber = numberToCheck;
+        _round.winningAddress = _resultCalcHelper.im_seenOnce.getValueByIndex(i);
       }
-      // Clean up
-      // CHECK: is it the best way? ie. shall we just set array lengthto zero? (im_seenOnce.clear())
-      //    https://ethereum.stackexchange.com/questions/14017/solidity-how-could-i-apply-delete-to-complete-storage-ref-with-one-call
-      _resultCalcHelper.im_seenOnce.destroy();
-      _resultCalcHelper.im_seenMultiple.destroy();
-      return numberOfUnrevealedOrInvalidBets;
-  } // updateResults
+    }
+    // Clean up
+    // CHECK: is it the best way? ie. shall we just set array lengthto zero? (im_seenOnce.clear())
+    //    https://ethereum.stackexchange.com/questions/14017/solidity-how-could-i-apply-delete-to-complete-storage-ref-with-one-call
+    _resultCalcHelper.im_seenOnce.destroy();
+    _resultCalcHelper.im_seenMultiple.destroy();
+    return numberOfUnrevealedOrInvalidBets;
+} // updateResults
 
 }

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.8;
 
 library stringUtilsLib {
-    /* this started to throw from contract, no clue why. replaced with parseInt
+
   function stringToUint(string s) constant returns (uint result) {
           bytes memory b = bytes(s);
           uint i;
@@ -13,8 +13,8 @@ library stringUtilsLib {
               }
           }
       }
-      */
 
+    /* alternative for stringToUint
     // Copyright (c) 2015-2016 Oraclize srl, Thomas Bertani
     function parseInt(string _a, uint _b) internal returns (uint) {
       bytes memory bresult = bytes(_a);
@@ -31,5 +31,5 @@ library stringUtilsLib {
         } else if (bresult[i] == 46) decimals = true;
       }
       return mint;
-    }
+    } */
 } // strings

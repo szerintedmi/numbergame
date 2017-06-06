@@ -2,9 +2,9 @@ pragma solidity ^0.4.8;
 import "./Owned.sol";
 import "./nGameLib.sol";
 import "./ethereum-api/usingOraclize.sol"; // github.com/oraclize/ethereum-api/oraclizeAPI.sol
-import "./stringUtilsLib.sol";
 import "./itMapsLib.sol";
 import "./solidity-stringutils/strings.sol"; // github.com/Arachnid/solidity-stringutils/strings.sol
+import "./stringUtilsLib.sol";
 
 contract NumberGame is owned, usingOraclize  {
   /*********************************
@@ -21,7 +21,7 @@ contract NumberGame is owned, usingOraclize  {
    * - guesses are placed in an enrcrypted format (client side encryption, we don't have )
    * - fee
    * **************************/
-    using strings for *;
+
     // Use itMap for all functions on the struct
     using itMapsLib for itMapsLib.itMapUintUint;
     using itMapsLib for itMapsLib.itMapUintAddress;
@@ -30,6 +30,7 @@ contract NumberGame is owned, usingOraclize  {
     using nGameLib for nGameLib.Round;
     using nGameLib for nGameLib.Game;
     using nGameLib for nGameLib.ResultCalcHelper;
+    using strings for *;
 
     /* TODO: contract is too big, need to refactor to separate contracts (and rethink libs includng nGameLib)
      TODO: deductFee() transfers the whole fee amount to owner although oraclize already deducted
@@ -77,9 +78,7 @@ contract NumberGame is owned, usingOraclize  {
     event e_fundsReceived (address indexed _from, uint _amount);
     event e_settingChange(uint indexed _roundId, string _settingName, uint _oldValue, uint _newValue);
 
-    //numberGameRound.Round[] rounds;
     nGameLib.Game game; //  to store all game info
-    nGameLib.ResultCalcHelper resultCalcHelper;  //  to store
 
     // constructor
     function NumberGame() payable {
@@ -105,22 +104,22 @@ contract NumberGame is owned, usingOraclize  {
       }
     } // payable
 
-    function latestRoundId() constant returns(uint _roundId) {
-      /* Override default getter to handle case when no round created yet
-       ie. latestRoundId = 0 but game.rounds[] is empty after contract creation
-       */
+/*  commented out too big contact :/    function latestRoundId() constant returns(uint _roundId) {
+      // Override default getter to handle case when no round created yet
+       // ie. latestRoundId = 0 but game.rounds[] is empty after contract creation
+
       if (game.rounds.length > 0 ) {
         return game.latestRoundId;
       } else {
         // there was no round created yet
         throw;
       }
-    }
+    } */
 
-    function getRequiredBetAmount(uint roundId) constant returns (uint ret) {
+ /*  commented out too big contact :/ function getRequiredBetAmount(uint roundId) constant returns (uint ret) {
         ret = game.rounds[roundId].requiredBetAmount;
         return ret;
-    } // getRequiredBetAmount
+    } // getRequiredBetAmount */
 
     function getTotalPot(uint _roundId) constant returns (uint _totalPot) {
       // returns total pot amount (fees not deducted)
@@ -138,9 +137,9 @@ contract NumberGame is owned, usingOraclize  {
       return _feeAmount;
     }
 
-    function getOraclizePrice(string _dataSource) constant returns (uint){
+   /* commented out to reduce contract size: function getOraclizePrice(string _dataSource) constant returns (uint){
         return oraclize_getPrice(_dataSource) ;
-    } // getOraclizePrice()
+    } // getOraclizePrice() */
 
     function getGameInfo() constant returns (uint _roundsCount, uint _latestRoundId, uint _nextRoundLength,
         uint _nextRoundRequiredBetAmount, uint _nextRoundFee ) {
@@ -156,30 +155,30 @@ contract NumberGame is owned, usingOraclize  {
     function getRoundInfo(uint roundId) constant returns(
           bool _isActive,
           uint _requiredBetAmount, uint _revealTime, uint _roundLength,
-          uint _betCount, uint _revealedBetCount,  uint _unReveleadBetCount,
+          uint _betCount, uint _revealedBetCount,  uint _unReveleadBetCount, uint _invalidBetCount,
           address _winningAddress, uint _smallestNumber,
           uint _winnablePot, uint _fee) {
-        /* TODO: add invalidBetCount */
+        nGameLib.Round storage currentRound  = game.rounds[roundId];
+        _isActive = currentRound.isActive;
 
-        _isActive = game.rounds[roundId].isActive;
+        _requiredBetAmount = currentRound.requiredBetAmount;
 
-        _requiredBetAmount = game.rounds[roundId].requiredBetAmount;
+        _revealTime = currentRound.revealTime ;
+        _roundLength = currentRound.roundLength ;
 
-        _revealTime = game.rounds[roundId].revealTime ;
-        _roundLength = game.rounds[roundId].roundLength ;
+        _betCount = currentRound.im_bets.size();
+        _revealedBetCount = currentRound.revealedBetCount ;
+        _unReveleadBetCount = currentRound.im_bets.size() - currentRound.revealedBetCount;
 
-        _betCount = game.rounds[game.latestRoundId].im_bets.size();
-        _revealedBetCount = game.rounds[roundId].revealedBetCount ;
-        _unReveleadBetCount = game.rounds[game.latestRoundId].im_bets.size() - game.rounds[roundId].revealedBetCount;
-
-        _winningAddress = game.rounds[roundId].winningAddress;
-        _smallestNumber = game.rounds[roundId].smallestNumber;
+        _invalidBetCount = currentRound.invalidBetCount;
+        _winningAddress = currentRound.winningAddress;
+        _smallestNumber = currentRound.smallestNumber;
         _winnablePot = getWinnablePot(roundId);
-        _fee = game.rounds[roundId].fee;
+        _fee = currentRound.fee;
 
      return (_isActive,
          _requiredBetAmount,  _revealTime,  _roundLength,
-         _betCount,  _revealedBetCount,   _unReveleadBetCount,
+         _betCount,  _revealedBetCount,   _unReveleadBetCount, _invalidBetCount
          _winningAddress, _smallestNumber,  _winnablePot, _fee);
     } // getRoundInfo()
 
@@ -256,7 +255,7 @@ contract NumberGame is owned, usingOraclize  {
           return 6;
       }
 
-      uint requiredBal = getOraclizePrice("decrypt") ;
+      uint requiredBal = oraclize_getPrice("decrypt"); // getOraclizePrice("decrypt") ;
        if ( requiredBal> this.balance) {
             // e_error("Not enough ETH to cover for transaction fee (oraclize query)" );
             return 7;
@@ -298,7 +297,7 @@ contract NumberGame is owned, usingOraclize  {
         // CHECK: error handling from oraclize_query?
         // CHECK: how gas price setting works here?
         // CHECK: is the 200k default gas safe enough? https://github.com/oraclize/ethereum-api/issues/10
-        queryId = oraclize_query( game.rounds[game.latestRoundId].revealTime, "decrypt", encryptedBet, 1000000 ); // block limit: 3141592
+        queryId = oraclize_query( game.rounds[game.latestRoundId].revealTime, "decrypt", encryptedBet, 3141592 ); // block limit: 3141592
 
         game.rounds[game.latestRoundId].im_bets.insert(msg.sender, 0); // store bet with 0 for now, we will reveal
                                     // later in scheduled _callback
@@ -323,7 +322,6 @@ contract NumberGame is owned, usingOraclize  {
        *       In those cases the round won't close automatically and the admin has to manually
        *       close the round with checkAndCloseRound(forceClose=true) which will refund all bets (minus fees)
        *       - If bet is invalid we count as revelaed but keep it as 0
-       *
        * TODO: checkAndCloseRound should happen via a new callback (when all bets revealed)
        * TODO: check if callback is still for the same gameround
        *              eg. pass gameround + potential palyerADdress param to oraclize query and check here?
@@ -347,6 +345,7 @@ contract NumberGame is owned, usingOraclize  {
         // CHECK: shall we if any these errors happen:
         //              a)  remove / update bids/query & counters etc  OR
         //             b) automatically forceClose the round?
+        //             c) do game.rounds[game.latestRoundId].invalidBetCount++ before return?
         if (playerAddress == address(0)) {
             // not likely  unless Oraclize cheats or bug
             e_error("A bet reveal was received but we didn't now about this bid. Reveal stopped");
@@ -365,11 +364,23 @@ contract NumberGame is owned, usingOraclize  {
             return;
         }
 
+        uint betNumber = game._revealBet(playerAddress, result);
+
+        e_betRevealed(game.latestRoundId, playerAddress, queryId, betNumber);
+
+        // call a non forced close (ie. it won't close if there are still unreavealed bids )
+        checkAndCloseRound(false);
+
+    } // __callback
+
+/* moved to lib to shrink contract size
+    function revealBet(address playerAddress, string result) internal returns (uint betNumber) {
+
         game.rounds[game.latestRoundId].revealedBetCount++; // we count as revelead (but still can be invalid)
 
         // extract the received decrypted parameters
         // CHECK: this cost a lot of gas, especially for longer strings. maybe limit how long we parse  somehow?
-        uint betNumber;
+
         strings.slice memory s = result.toSlice();
         strings.slice memory part;
         // part and return value is first before :
@@ -381,18 +392,32 @@ contract NumberGame is owned, usingOraclize  {
         //betNumber = stringUtilsLib.stringToUint(arg1);
         betNumber = stringUtilsLib.parseInt(arg1, 0);
 
-        if (betNumber > 0) {
+       if (betNumber > 0) {
           // reveal bid in im_bets if it's a valid betNumber
           game.rounds[game.latestRoundId].im_bets.insert(playerAddress, betNumber);
+
+          // update results
+          if (betNumber < game.rounds[game.latestRoundId].smallestNumber ||
+            game.rounds[game.latestRoundId].smallestNumber == 0 && betNumber != 0 ) {
+            // new winning number
+            game.rounds[game.latestRoundId].smallestNumber = betNumber;
+            game.rounds[game.latestRoundId].winningAddress = playerAddress;
+          } else {
+            if( betNumber == game.rounds[game.latestRoundId].smallestNumber) {
+              // the latest winner is the same, no winner
+              game.rounds[game.latestRoundId].smallestNumber = 0;
+              game.rounds[game.latestRoundId].winningAddress = address(0);
+            }
+          }
+        } else {
+          // it's an invalid betNumber
+          game.rounds[game.latestRoundId].invalidBetCount++;
         }
 
-        e_betRevealed(game.latestRoundId, playerAddress, queryId, betNumber);
+        return betNumber;
 
-        // call a non forced close (ie. it won't close if there are still unreavealed bids )
-        checkAndCloseRound(false);
-
-    } // __callback
-
+      } // revealBet
+*/
     function checkAndCloseRound(bool forceClose) returns(int16 result) {
       /* **********************checkAndCloseRound************************
       *  updates result, closes round
@@ -449,7 +474,8 @@ contract NumberGame is owned, usingOraclize  {
           return -2;
       }
 
-      bool isAllRevealed = (game.rounds[game.latestRoundId].revealedBetCount == game.rounds[game.latestRoundId].im_bets.size());
+      nGameLib.Round storage currentRound = game.rounds[game.latestRoundId];
+      bool isAllRevealed = (currentRound.revealedBetCount == currentRound.im_bets.size());
 
       if ( !isAllRevealed ) {
           if (forceClose) { // TODO: it's a log event only
@@ -465,22 +491,21 @@ contract NumberGame is owned, usingOraclize  {
       }
 
       // All bets revealed (or not but it's a forceClose) so proceed closing:
-      // TODO: should we move these vars into rounds[current] ?
-      uint numberOfUnrevealedOrInvalidBets = game.updateResults(game.latestRoundId);
-      uint numberOfUnrevealedBets = game.rounds[game.latestRoundId].im_bets.size() - game.rounds[game.latestRoundId].revealedBetCount;
-      uint numberOfInvalidBets = numberOfUnrevealedOrInvalidBets - numberOfUnrevealedBets;
+      currentRound.isActive = false;
+
+      game.updateResults(game.latestRoundId);
 
       /* distribute or refund */
 
       if (result == 3 ) {
         // forceClose with unreavealed bids, no winner!
-        game.rounds[game.latestRoundId].winningAddress = address(0);
-        game.rounds[game.latestRoundId].smallestNumber = 0;
+        currentRound.winningAddress = address(0);
+        currentRound.smallestNumber = 0;
         refundPlayers(getTotalPot(game.latestRoundId)); // refund all bet amounts (throws on error)
       } else {
         // it's not a forceClose with unreavealed bids
         deductFee(); // it throws on error
-        if (game.rounds[game.latestRoundId].winningAddress == address(0)) {
+        if (currentRound.winningAddress == address(0)) {
           // NO winner, refund players
           refundPlayers(getWinnablePot(game.latestRoundId)); // refund all bet amounts less fee (throws on error)
         } else {
@@ -490,15 +515,19 @@ contract NumberGame is owned, usingOraclize  {
       }
 
       // Close round when all went well so far
-      game.rounds[game.latestRoundId].isActive = false;
-      e_roundClosed(game.latestRoundId, game.rounds[game.latestRoundId].winningAddress, game.rounds[game.latestRoundId].smallestNumber, game.rounds[game.latestRoundId].im_bets.size(), numberOfUnrevealedBets, numberOfInvalidBets);
+
+      e_roundClosed(game.latestRoundId, currentRound.winningAddress,
+            currentRound.smallestNumber,
+            currentRound.im_bets.size(),
+            currentRound.im_bets.size() - currentRound.revealedBetCount,  //  numberOfUnrevealedBets,
+            currentRound.invalidBetCount );
 
       return result;
     } // checkAndCloseRound
 
     function deductFee() internal {
       /* throws on error
-        CHECK: this works only with solidity 0.8.10+ but truffle doesn't support that version
+        CHECK: owner.transfer() works only with solidity 0.8.10+ but truffle doesn't support that version
               follow this question: https://ethereum.stackexchange.com/questions/15749/how-do-i-specify-a-different-solidity-version-in-a-truffle-contract
               owner.transfer(getFeeAmount(game.latestRoundId)); // this throws on error */
       if (!owner.send(getFeeAmount(game.latestRoundId)) ) {
@@ -528,7 +557,7 @@ contract NumberGame is owned, usingOraclize  {
       uint refundAmount = _totalRefund / game.rounds[game.latestRoundId].im_bets.size();
       if (refundAmount > 0 ) {
         for (uint i = 0; i < game.rounds[game.latestRoundId].im_bets.size(); i++){
-          // CHECK: this works only with solidity 0.8.10+ but truffle doesn't support that version
+          // CHECK: .transfer() works only with solidity 0.8.10+ but truffle doesn't support that version
           //        follow this question: https://ethereum.stackexchange.com/questions/15749/how-do-i-specify-a-different-solidity-version-in-a-truffle-contract
           // game.rounds[game.latestRoundId].im_bets.getKeyByIndex(i).transfer( refundAmount);
           if (!game.rounds[game.latestRoundId].im_bets.getKeyByIndex(i).send( refundAmount) ) {
