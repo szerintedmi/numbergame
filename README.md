@@ -50,7 +50,7 @@ npm install
 ```
 npm run testrpc:start
 npm run bridge:start
-npm start truffle:migrate
+npm run truffle:migrate
 npm run dev
 ```
 [Detailed deploy instructions](docs/deploy.md)
