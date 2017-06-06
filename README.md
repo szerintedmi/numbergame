@@ -29,25 +29,26 @@ There are a number of known issues with this approach. See ongoing discussion in
 ### Prerequisites
 * [Ethereum CLI](https://www.ethereum.org/cli)
 * [nodejs](https://nodejs.org/en/download/)
-* numbergame repo  
+* [node version manager](https://github.com/tj/n): `npm install -g n`
+  * install 6.9.1 for ethereum-bridge: `n 6.9.1`
+  * install latest (tested with 8.0.0):  `n latest`
+* [numbergame repo](https://github.com/szerintedmi/numbergame):
 ```
 git clone --recursive https://github.com/szerintedmi/numbergame.git
 cd numbergame
 npm install
+cd ethereum-bridge
+npm install
 ```
-#### Optional
-* if you want to run testrpc in a [docker](https://store.docker.com/search?type=edition&offering=community) container:  
+* [testrpc](https://github.com/ethereumjs/testrpc) (global): `npm run testrpc:install`
+  * if you want to run testrpc in a [docker](https://store.docker.com/search?type=edition&offering=community) container:  
 `npm run testrpc:docker:build`
-* if you want to work with newer nodejs versions:
-  * [node version manager](https://github.com/tj/n): `npm install -g n`
-  * install 6.9.1 for ethereum-bridge: `n 6.9.1`
-  * install latest (tested with 8.0.0):  `n latest`
-
+* [truffle](http://truffleframework.com/docs/getting_started/installation) (global): `npm run truffle:install`
 
 ### Compile & deploy & run
 #### on testprc
 ```
-testrpc -m "hello build tongue rack parade express shine salute glare rate spice stock" -a 10
+npm run testrpc:start
 npm run bridge:start
 npm start truffle:migrate
 npm run dev
@@ -55,7 +56,7 @@ npm run dev
 [Detailed deploy instructions](docs/deploy.md)
 
 * An improved and customized [Ethereum explorer fork](https://github.com/szerintedmi/explorer) if you want to browse the local chain:  
-```npm run explorer:start```
+`npm run explorer:start`
 
 TODO:
  * When contract .sol changed then both testrcp and ethereum-bridge need to be restarted. Truffle migrate won't deploy the new version.

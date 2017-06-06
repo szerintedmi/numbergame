@@ -2,10 +2,15 @@
 # Compile, deploy & run, detailed instructions
 ## on testrpc
 ### 1. [testrpc](https://github.com/ethereumjs/testrpc)
-   `testrpc -m "hello build tongue rack parade express shine salute glare rate spice stock" -a 10`  
+ * `npm run testrpc:start`
+ * or w/o npm:  
+   `n use latest $(npm config get prefix)/bin/testrpc -m "hello build tongue rack parade express shine salute glare rate spice stock" -a 10`  
 _This exact mnemonic is required in order to ethereum bridge deploy the contract to the same address which is currently hardcoded in NumberGame.sol_  
-   * or to launch in docker:  
-   `npm run testrpc:start`
+  * or to launch in docker:  
+   ```
+   npm run testrpc:docker:build
+   npm run testrpc:start
+   ```
 
 ### 2.  [Ethereum bridge](https://github.com/oraclize/ethereum-bridge)  
   ```
@@ -13,6 +18,7 @@ _This exact mnemonic is required in order to ethereum bridge deploy the contract
   ```  
   or
   ```
+  cd ethereum-bridge
   n use 6.9.1 bridge -H localhost:8545 -a 9 --dev
   ```  
 For next step wait for Oraclize Address Resolver to be deployed, look for output:  
