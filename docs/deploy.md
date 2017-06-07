@@ -4,8 +4,8 @@
 ### 1. [testrpc](https://github.com/ethereumjs/testrpc)
  * `npm run testrpc:start`
  * or w/o npm:  
-   `n use latest $(npm config get prefix)/bin/testrpc -m "hello build tongue rack parade express shine salute glare rate spice stock" -a 10`  
-_This exact mnemonic is required in order to ethereum bridge deploy the contract to the same address which is currently hardcoded in NumberGame.sol_  
+   `./runtestrpc.sh)`  
+_it runs testrpc with mnemonic (ethereum bridge will deploy the contract to the same address which is currently hardcoded in NumberGame.sol), and with a predefined set of accounts with balances for unit tests_  
   * or to launch in docker:  
    ```
    npm run testrpc:docker:build
