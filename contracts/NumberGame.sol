@@ -418,6 +418,7 @@ contract NumberGame is owned, usingOraclize  {
 
       } // revealBet
 */
+
     function checkAndCloseRound(bool forceClose) returns(int16 result) {
       /* **********************checkAndCloseRound************************
       *  updates result, closes round
@@ -478,40 +479,30 @@ contract NumberGame is owned, usingOraclize  {
       bool isAllRevealed = (currentRound.revealedBetCount == currentRound.im_bets.size());
 
       if ( !isAllRevealed ) {
-          if (forceClose) { // TODO: it's a log event only
+          if (forceClose) { // forceClose with unreavealed bids, no winner!
               e_error("Force closing round by admin despite not all bids are revealed yet.");
+              currentRound.isActive = false;
+              currentRound.winningAddress = address(0);
+              currentRound.smallestNumber = 0;
+              refundPlayers(getTotalPot(game.latestRoundId)); // refund all bet amounts (throws on error)
               result = 3;
-              // it's a force close so we're proceeding
           } else {
-              // it's not an error, waiting for more reveal callbacks before we can close
+              // not all revealed yet - it's not an error, waiting for more reveal callbacks before we can close
              return 1;
           }
       } else {
+         // all bets revelead, closing round
+          currentRound.isActive = false;
+          game.updateResults(game.latestRoundId);
+          deductFee(); // it throws on error
+          if (currentRound.winningAddress == address(0)) {
+            // NO winner, refund players
+            refundPlayers(getWinnablePot(game.latestRoundId)); // refund all bet amounts less fee (throws on error)
+          } else {
+            // there is a winner
+            payWinner(); // pay winner less fees (throws on error)
+          }
           result = 2;
-      }
-
-      // All bets revealed (or not but it's a forceClose) so proceed closing:
-      currentRound.isActive = false;
-
-      game.updateResults(game.latestRoundId);
-
-      /* distribute or refund */
-
-      if (result == 3 ) {
-        // forceClose with unreavealed bids, no winner!
-        currentRound.winningAddress = address(0);
-        currentRound.smallestNumber = 0;
-        refundPlayers(getTotalPot(game.latestRoundId)); // refund all bet amounts (throws on error)
-      } else {
-        // it's not a forceClose with unreavealed bids
-        deductFee(); // it throws on error
-        if (currentRound.winningAddress == address(0)) {
-          // NO winner, refund players
-          refundPlayers(getWinnablePot(game.latestRoundId)); // refund all bet amounts less fee (throws on error)
-        } else {
-          // there is a winner
-          payWinner(); // pay winner less fees (throws on error)
-        }
       }
 
       // Close round when all went well so far

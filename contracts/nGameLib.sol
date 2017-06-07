@@ -77,7 +77,8 @@ library nGameLib {
     return self.latestRoundId;
   }
 
-  function _revealBet(Game storage self, address _playerAddress, string _betString) internal returns (uint betNumber) {
+  function _revealBet(Game storage self, address _playerAddress, string _betString)
+        internal returns (uint betNumber) {
     Round storage  currentRound = self.rounds[self.latestRoundId];
     currentRound.revealedBetCount++; // we count as revelead (but still can be invalid)
 
@@ -98,45 +99,35 @@ library nGameLib {
       // reveal bid in im_bets if it's a valid betNumber
       currentRound.im_bets.insert(_playerAddress, betNumber);
 
+      // update im_seenMultiple & im_seenOnce
+      if (! self.resultCalcHelper.im_seenMultiple.contains(betNumber) ) {
+        if (self.resultCalcHelper.im_seenOnce.contains(betNumber)) {
+          self.resultCalcHelper.im_seenOnce.remove(betNumber);
+          self.resultCalcHelper.im_seenMultiple.insert(betNumber, true);
+        } else {
+          // first occurence, add to seenOnce
+          self.resultCalcHelper.im_seenOnce.insert( betNumber, _playerAddress);
+        }
+      } // end if not in seenMultiple
     } else {
       // it's an invalid betNumber
       currentRound.invalidBetCount++;
     }
 
     return betNumber;
+  } // _revealBet()
 
-  }
-
-  function updateResults(Game storage self, uint _roundId) returns (uint numberOfUnrevealedOrInvalidBets) {
+  function updateResults(Game storage self, uint _roundId) returns (bool isThereWinner) {
     Round storage _round = self.rounds[_roundId];
     ResultCalcHelper storage _resultCalcHelper = self.resultCalcHelper;
-    uint numberOfBets = _round.im_bets.size() ;
     uint numberToCheck;
-
-    // collect unique betnumbers in seenOnce from all bets (im_bets)
-    for(uint i = 0; i < numberOfBets  ; i++) {
-        numberToCheck = _round.im_bets.getValueByIndex(i); // CHECK: does it overwrite value in im_bets?
-        if(numberToCheck > 0) { // if this bid has been already revealed and valid...
-          if (_resultCalcHelper.im_seenMultiple.contains(numberToCheck) ) {
-            continue;
-          }
-          if (_resultCalcHelper.im_seenOnce.contains(numberToCheck)) {
-            _resultCalcHelper.im_seenOnce.remove(numberToCheck);
-            _resultCalcHelper.im_seenMultiple.insert(numberToCheck, true);
-          } else {
-            // first occurence, add to seenOnce
-            _resultCalcHelper.im_seenOnce.insert( numberToCheck, _round.im_bets.getKeyByIndex(i));
-          }
-        } else {
-            numberOfUnrevealedOrInvalidBets++ ;
-        } // numberToCheck
-    } // for
 
     // find smallestNumber in seenOnce
     _round.winningAddress = address(0);
     _round.smallestNumber = 0;
     uint seenOnceCount = _resultCalcHelper.im_seenOnce.size();
-    for( i=0; i < seenOnceCount; i++) {
+
+    for( uint i=0; i < seenOnceCount; i++) {
       numberToCheck = _resultCalcHelper.im_seenOnce.getKeyByIndex(i);
       if (numberToCheck < _round.smallestNumber || _round.smallestNumber == 0) {
         _round.smallestNumber = numberToCheck;
@@ -148,7 +139,7 @@ library nGameLib {
     //    https://ethereum.stackexchange.com/questions/14017/solidity-how-could-i-apply-delete-to-complete-storage-ref-with-one-call
     _resultCalcHelper.im_seenOnce.destroy();
     _resultCalcHelper.im_seenMultiple.destroy();
-    return numberOfUnrevealedOrInvalidBets;
+    return (_round.smallestNumber > 0);
 } // updateResults
 
 }
