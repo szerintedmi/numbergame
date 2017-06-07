@@ -1,3 +1,6 @@
+# temp fix for npm issues
+package-lock.json
+
 build
 .DS_Store
 
