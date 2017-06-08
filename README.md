@@ -63,7 +63,7 @@ TODO:
  * dockerize (Dockerfiles + docker-compose config)
 
 ## Testing
-TODO: write unit tests
+`truffle test` (work in progress)
 
 ## Licence
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
