@@ -184,10 +184,21 @@ contract("NumberGame", function(accounts) {
       return new Promise(resolve => resolve(
         instance.placeBet(roundId, testNumbers[bet.n].encryptedBet, {from: accounts[bet.p], value: betAmount})
         .then( function (tx) {
-          queryIds.push( tx.logs[0].args._queryId);
+          queryIds.push( [tx.logs[0].args._queryId, bet]);
           logGasUse("placeBet (4 bet, winner) p:" + bet.p + " n: " + bet.n, tx);
           return tx;
         }) // placeBet
+      )); // Promise
+    } // placeBetFn
+
+    var revealBetFn = function revealBet(query) {
+      return new Promise(resolve => resolve(
+        instance.__callback(query[0], testNumbers[query[1].n].betWithSalt, {from: oraclizeCbAddress})
+        .then( function (tx) {
+          queryIds.push( tx.logs[0].args._queryId);
+          logGasUse("revealBet (4 bet, winner) p:" + query[1].p + "n: " + query[1].n, tx);
+          return tx;
+        }) // revealBet
       )); // Promise
     } // placeBetFn
 
@@ -196,28 +207,43 @@ contract("NumberGame", function(accounts) {
       return instance.startNewRound({from: accounts[0]});
     }).then( function(tx) {
       logGasUse("2nd startRound (4 bet, winner)", tx);
+      /*** PLACE BETS ***/
       roundId = tx.logs[0].args._roundId;
-      var actions = betsToPlace.map(placeBetFn);
-      var results = Promise.all( actions);
+      var placeBetActions = betsToPlace.map(placeBetFn);
+      var results = Promise.all( placeBetActions);
       results.then( function(tx) {
         return instance.getRoundInfo(roundId);
       }).then( function(result) {
-          var round = parseRoundInfo(result);
-          assert.equal(round.betCount, betsToPlace.length, "new round betCount should be set");
-          assert.equal(round.revealedBetCount, 0, "new round revealedBetCount should be 0");
-          assert.equal(round.unReveleadBetCount, betsToPlace.length, "new round unReveleadBetCount should be set");
-          assert.equal(round.invalidBetCount, 0, "new round invalidBetCount should be 0");
-          assert.equal(round.winningAddress, 0, "new round winningAddress should be 0x0");
-          assert.equal(round.smallestNumber, 0, "new round smallestNumber should be 0");
-          assert.equal(round.winnablePot, (1-round.fee/1000000 )* betAmount *betsToPlace.length, "new round winnablePot should be set");
-      }).then( function() {
+        var round = parseRoundInfo(result);
+        assert.equal(round.betCount, betsToPlace.length, "new round betCount should be set");
+        assert.equal(round.revealedBetCount, 0, "new round revealedBetCount should be 0");
+        assert.equal(round.unReveleadBetCount, betsToPlace.length, "new round unReveleadBetCount should be set");
+        assert.equal(round.invalidBetCount, 0, "new round invalidBetCount should be 0");
+        assert.equal(round.winningAddress, 0, "new round winningAddress should be 0x0");
+        assert.equal(round.smallestNumber, 0, "new round smallestNumber should be 0");
+        assert.equal(round.winnablePot, (1-round.fee/1000000 )* betAmount *betsToPlace.length, "new round winnablePot should be set");
 
-        // TODO: reveal all queryIds then assert winner & pot sent to winner
-        done();
+        /*** REVEAL BETS ***/
+        var revealBetActions = queryIds.map(revealBetFn);
+        var results = Promise.all( revealBetActions);
+        results.then( function(tx) {
+          return instance.getRoundInfo(roundId);
+        }).then( function(result) {
+          var round = parseRoundInfo(result);
+          assert.equal(round.betCount, betsToPlace.length, "round betCount should be set");
+          assert.equal(round.revealedBetCount, betsToPlace.length, "round revealedBetCount should be set");
+          assert.equal(round.unReveleadBetCount, 0, "round unReveleadBetCount should be set");
+          assert.equal(round.invalidBetCount, 0, "round invalidBetCount should be 0");
+          assert.equal(round.winningAddress, accounts[3], "round winningAddress should be set");
+          assert.equal(round.smallestNumber, 5, "round smallestNumber should be 0");
+
+          // TODO: check winner balance + owner balance
+          done();
+        });
       });
     }); // deployed
-
   }); // should be possible to reveal bets (4 bet, winner)
+
   after(function() {
     // runs after all tests in this block
     console.log("=========== GAS USAGE STATS ===========");
