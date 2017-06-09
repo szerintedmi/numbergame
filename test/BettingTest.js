@@ -24,7 +24,7 @@ contract("NumberGame", function(accounts) {
     { submittedGuess: 10, encryptedBet: 'BODAWnT6EHPR/3hzgwHFYFVelOYpvFCJpyiv6ImejkLCxofZwHhvGOAUNc90IzUKNajqgOzalAqUu2e15EostKA9zJL7FB5a/N3MwaKRl0ekIHPanZphHPtJIr+3rka5GS+aUQ==', betWithSalt: '10:unl4LN9fVnUOqA=='}
   ];
 
-  var queryIds = new Array(); // to store queryIds sent (so that we don't need to wait for Oraclize callback)
+  var queryIds = new Array(); // TODO: refactor this in scope for tests?
   var oraclizeCbAddress;
   var gasUseLog = new Array();
 
@@ -130,9 +130,11 @@ contract("NumberGame", function(accounts) {
 
   it('should be possible to reveal a bet (1 bet, winner)', function(done) {
     //it's dependent on the previous test with 1 bet placed
+    // TODO: change this to the generic multi place/reveal logic
     var instance;
     var roundId = 0, playerAddress = accounts[1], betAmount = web3.toWei(1), queryId;
     var balanceBefore;
+
     NumberGame.deployed().then( function(contractInstance) {
       instance = contractInstance;
       return instance.getOraclizeCbAddress();
@@ -176,10 +178,10 @@ contract("NumberGame", function(accounts) {
 
   it('should be possible to reveal bets (4 bet, winner)', function(done) {
     var instance;
-    var roundId, playerAddress = accounts[1], betAmount = web3.toWei(1), queryId;
+    var roundId, betAmount = web3.toWei(1);
     var balanceBefore;
-    queryIds = [];
-    var betsToPlace = [{n:2,p:1}, {n:8,p:2}, {n:5,p:3}, {n:2,p:4}];  // n: ref to testNumbers[], p: ref to  accounts[]
+    var betsToPlace ; // n: ref to testNumbers[], p: ref to  accounts[]
+
     var placeBetFn = function placeBet(bet) {
       return new Promise(resolve => resolve(
         instance.placeBet(roundId, testNumbers[bet.n].encryptedBet, {from: accounts[bet.p], value: betAmount})
@@ -208,6 +210,9 @@ contract("NumberGame", function(accounts) {
     }).then( function(tx) {
       logGasUse("2nd startRound (4 bet, winner)", tx);
       /*** PLACE BETS ***/
+
+      queryIds = [];
+      betsToPlace = [{n:2,p:1}, {n:8,p:2}, {n:5,p:3}, {n:2,p:4}];
       roundId = tx.logs[0].args._roundId;
       var placeBetActions = betsToPlace.map(placeBetFn);
       var results = Promise.all( placeBetActions);
