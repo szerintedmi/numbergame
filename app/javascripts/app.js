@@ -433,7 +433,6 @@ window.App = {
     numberGame.deployed()
       .then(function(instance) {
 
-        var submittedGuess = parseInt(document.getElementById("numberGuessInput").value);
         // TODO: client side validation (is number, >0, max value etc.)
         instance.verifyBet(currentRound.roundId, currentRound.requiredBetAmount)
         .then( function (result) {
@@ -450,6 +449,9 @@ window.App = {
           // var gasEstimate =  web3.eth.estimateGas( {from: accountSelected, to: instance.address,
           //                                   data: callData, value: currentRound.requiredBetAmount });
           var gasEstimate =  4712388;
+          var submittedGuess = parseInt(document.getElementById("numberGuessInput").value);
+          var betWithSalt = submittedGuess + ":" + base64_arraybuffer.encode( secureRandom(10, {type: 'Buffer'})) ;
+          var betMessageToEncrypt = JSON.stringify({message: betWithSalt});
 
           var xhr = new XMLHttpRequest();
           var oraclizeURL = "https://api.oraclize.it/v1/utils/encryption/encrypt";
@@ -464,7 +466,9 @@ window.App = {
               console.debug(" placeBet -  sending tx. roundId: " + currentRound.roundId + " | Value: "
                   + currentRound.requiredBetAmount + " from account " + accountSelected + " to "
                   + instance.address + " | gasEstimate: " + gasEstimate
-                  + " | encryptedBet: " + encryptedBet);
+                  + " | { submittedGuess: " + submittedGuess
+                  + ", encryptedBet: '" +  encryptedBet + "'"
+                  + ", betWithSalt: '" + betWithSalt + "' } ");
               instance.placeBet(currentRound.roundId, encryptedBet,
                     {from: accountSelected, to: instance.address, value: currentRound.requiredBetAmount, gas: gasEstimate})
               .then( function(result) {
@@ -477,11 +481,8 @@ window.App = {
              }); // placeBet
            }
        } // xhr.onreadystatechange
-       xhr.send(JSON.stringify({
-           message: submittedGuess + ":"
-            + base64_arraybuffer.encode( secureRandom(10, {type: 'Buffer'}))
-         })
-       ); // xhr.send()
+       xhr.send(betMessageToEncrypt);
+
     }); // verifyBet
    }); // deployed
   }, // placeBet

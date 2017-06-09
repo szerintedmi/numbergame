@@ -104,6 +104,10 @@ contract NumberGame is owned, usingOraclize  {
       }
     } // payable
 
+    function getOraclizeCbAddress() constant returns (address ret) {
+      return oraclize_cbAddress();
+    }
+
 /*  commented out too big contact :/    function latestRoundId() constant returns(uint _roundId) {
       // Override default getter to handle case when no round created yet
        // ie. latestRoundId = 0 but game.rounds[] is empty after contract creation
