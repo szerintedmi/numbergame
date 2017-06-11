@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "base64-arraybuffer": "^0.1.5",
+    "bignumber.js": "^4.0.2",
     "bootstrap": "^3.3.7",
     "moment": "^2.18.1",
     "moment-countdown": "0.0.3",
