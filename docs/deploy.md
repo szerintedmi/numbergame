@@ -19,7 +19,7 @@ _it runs testrpc with mnemonic (ethereum bridge will deploy the contract to the 
   or
   ```
   cd ethereum-bridge
-  n use 6.9.1 bridge -H localhost:8545 -a 9 --dev
+  n use 7.10.0 bridge -H localhost:8545 -a 9 --dev
   ```  
 For next step wait for Oraclize Address Resolver to be deployed, look for output:  
 `[2017-06-05T11:54:53.848Z] INFO address resolver (OAR) deployed to: 0x6f485c8bf6fc43ea212e93bbf8ce046c7f1cb475`

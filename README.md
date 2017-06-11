@@ -30,8 +30,8 @@ There are a number of known issues with this approach. See ongoing discussion in
 * [Ethereum CLI](https://www.ethereum.org/cli)
 * [nodejs](https://nodejs.org/en/download/)
 * [node version manager](https://github.com/tj/n): `npm install -g n`
-  * install 6.9.1 for ethereum-bridge: `n 6.9.1`
-  * install latest (tested with 8.0.0):  `n latest`
+  * install 7.10.0 for ethereum-bridge: `n 7.10.0`
+  * install 8.1.0 for testrpc:  `n 8.1.0`
 * [numbergame repo](https://github.com/szerintedmi/numbergame):
 ```
 git clone --recursive https://github.com/szerintedmi/numbergame.git
