@@ -1,3 +1,4 @@
+# THIS repo is defunct, project moved to a new repo: [ethereum-lupi](https://github.com/DecentLabs/ethereum-lupi)
 # numbergame
 Decentralised Smallest Number Game on Ethereum
 
